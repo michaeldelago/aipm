@@ -93,7 +93,7 @@ def main():
         elif args.action == "upgrade":
             print("Not implemented yet :e")
     except AttributeError:
-        args = parser.parse_args(["-h"])
+        args = parser.parse_args(["--help"])
 
 
 if __name__ == "__main__":
