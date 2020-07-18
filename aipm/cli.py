@@ -79,18 +79,21 @@ def main():
 
     prog = Program()
 
-    if args.option == "search":
-        prog.search(args.search_term)
-    elif args.option == "install":
-        prog.install(args.appimage)
-    elif args.option == "scrape":
-        prog.scrape()
-    elif args.option == "import":
-        prog.importJson(args.file)
-    elif args.option == "export":
-        prog.export()
-    elif args.action == "upgrade":
-        print("Not implemented yet :e")
+    try:
+        if args.option == "search":
+            prog.search(args.search_term)
+        elif args.option == "install":
+            prog.install(args.appimage)
+        elif args.option == "scrape":
+            prog.scrape()
+        elif args.option == "import":
+            prog.importJson(args.file)
+        elif args.option == "export":
+            prog.export()
+        elif args.action == "upgrade":
+            print("Not implemented yet :e")
+    except AttributeError:
+        args = parser.parse_args(["-h"])
 
 
 if __name__ == "__main__":
