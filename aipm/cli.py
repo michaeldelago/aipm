@@ -22,11 +22,13 @@ class Program:
         if self.configuration["AppImageLocation"]:
             downloadsDir = self.configuration["AppImageLocation"]
         else:
-            downloadsDir = f"/home/{config.username}/bin/apps"
+            downloadsDir = f"/home/{config.username}/bin"
 
-        if not os.path.isdir(downloadsDir):
+        if os.path.isdir(downloadsDir) == False:
             print(f"Downloads directory {downloadsDir} does not exist", file=sys.stderr)
             return 1
+        elif os.path.isdir("/".join([downloadsDir, ".apps"])) == False:
+            os.makedirs("/".join([downloadsDir, ".apps"]))
 
         ai.downloadAppImage(downloadsDir)
 
@@ -79,21 +81,22 @@ def main():
 
     prog = Program()
 
-    try:
-        if args.option == "search":
-            prog.search(args.search_term)
-        elif args.option == "install":
-            prog.install(args.appimage)
-        elif args.option == "scrape":
-            prog.scrape()
-        elif args.option == "import":
-            prog.importJson(args.file)
-        elif args.option == "export":
-            prog.export()
-        elif args.action == "upgrade":
-            print("Not implemented yet :e")
-    except AttributeError:
-        args = parser.parse_args(["--help"])
+
+    if args.option == "search":
+        prog.search(args.search_term)
+    elif args.option == "install":
+        prog.install(args.appimage)
+    elif args.option == "scrape":
+        prog.scrape()
+    elif args.option == "import":
+        prog.importJson(args.file)
+    elif args.option == "export":
+        prog.export()
+    elif args.action == "upgrade":
+        print("Not implemented yet :e")
+    # except AttributeError:
+    #     args = parser.parse_args(["--help"])
+
 
 
 if __name__ == "__main__":

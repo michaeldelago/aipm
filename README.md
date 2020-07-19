@@ -33,4 +33,6 @@
 4. configure application (edit aipm-sample.yaml, and move it to /home/USER/.config/aipm.yaml)
 5. import library
     aipm import -f /path/to/repo/library.json
+    OR
+    aipm scrape
 ```

@@ -120,7 +120,7 @@ class AppImage:
             return 1
 
         filename = self.downloadLink.split("/")[-1]
-        abspath = "/".join([downloadsDir, filename])
+        abspath = "/".join([downloadsDir, ".apps", filename])
         linkname = "/".join([downloadsDir, self.name])
 
         print(f"Starting download of package {self.name}")
