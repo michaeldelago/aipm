@@ -89,7 +89,7 @@ class AppImage:
             try:
                 req = gh_session.get(apiLink)
                 data = json.loads(req.text)
-                assets = data[0]["assets"]
+                # assets = data[0]["assets"]
             except KeyError:
                 print(
                     f"Unable to properly download the packages downloads for {self.name}",
@@ -99,10 +99,14 @@ class AppImage:
             except IndexError:
                 print(f"Request failed for {self.name}", file=sys.stderr)
                 return 1
-
-        for index in range(len(assets)):
-            if assets[index]["browser_download_url"].endswith(".AppImage"):
-                downloadLink = assets[index]["browser_download_url"]
+        for datum in data:
+            assets = datum["assets"]
+            for index in range(len(assets)):
+                if assets[index]["browser_download_url"].endswith("AppImage"):
+                    downloadLink = assets[index]["browser_download_url"]
+                    break
+            if downloadLink:
+                break
         if downloadLink == None:
             print(f"Unable to find a download link for {self.name}!", file=sys.stderr)
             return 1

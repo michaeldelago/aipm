@@ -1,4 +1,4 @@
 AppImageLocation: "/home/USERNAME/bin/apps"
 libraryLocation: "/home/USERNAME/.config"
-gh_login: "GITHUB USERNAME"
-gh_token: "GITHUB API TOKEN"
+gh_login: "ghlogin"
+gh_token: "ghtoken"

@@ -8,7 +8,10 @@ import lxml
 import requests
 from bs4 import BeautifulSoup
 
-from aipm import appimage
+try:
+    from aipm import appimage
+except:
+    import appimage
 
 
 class AppImageLibrary:
@@ -73,8 +76,11 @@ class AppImageLibrary:
                     searchResults.append((item, latver))
                     if len(item) > longestname:
                         longestname = len(item)
-        for item in searchResults:
-            print(f"\t{item[0].ljust(longestname + 2)} {item[1]}")
+        if len(searchResults) > 2:
+            for item in searchResults:
+                print(f"\t{item[0].ljust(longestname + 2)} {item[1]}")
+        else:
+            print(f"No results found for term {searchTerm}")
         return 0
 
     def exportJSON(self):
@@ -115,6 +121,7 @@ class AppImageLibrary:
         for ai in installed:
             ai.getDownloadLink()
             ai.downloadAppImage(downloadsDir)
+        # WORK IN PROGRESS
 
     # Pull the library of appImages
     def scrapeLibrary(self, gh_creds):
