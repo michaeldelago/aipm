@@ -123,7 +123,7 @@ class AppImageLibrary:
             ai.downloadAppImage(downloadsDir)
         # WORK IN PROGRESS
 
-    # Pull the library of appImages
+    # Pull the library of appImages [DEPRECATED]
     def scrapeLibrary(self, gh_creds):
         ails = []
         url = "https://appimage.github.io/apps/"
@@ -137,6 +137,47 @@ class AppImageLibrary:
                 ai = appimage.AppImage(scrapedai.get("id"))
                 executor.submit(ai.populateLinks, gh_creds)
                 ails.append(ai)
+
+        for ai in ails:
+            if ai.downloadLink:
+                self.addItem(ai)
+            else:
+                print(
+                    f"No Download Link for {ai.name}. Not Adding to Library Database.",
+                    file=sys.stderr,
+                )
+        print(f"Library has been built.")
+        return 0
+
+    # Uses the feed json from the site's URL - much more efficient than scraping for the download links
+    def update(self, gh_creds, filename=None):
+        url = "https://appimage.github.io/feed.json"
+        ails = list()
+
+        if filename:
+            with open(filename,"r") as jsonFile:
+                data = json.load(jsonFile)
+        else:
+            req = requests.get(url)
+            data = json.loads(req.content)
+
+        try:
+            packages = data["items"]
+        except KeyError:
+            print(f"Invalid content supplied", file=sys.stderr)
+            return 1
+        
+        for package in packages:
+            if package["links"]:
+                for link in package["links"]:
+                    if link["type"] == "Download":
+                        ai = appimage.AppImage(id=package["name"].lower(), githubLink=link["url"])
+                        ails.append(ai)
+        
+        with ThreadPoolExecutor() as executor:
+            for ai in ails:
+                executor.submit(ai.getDownloadLink, gh_creds)
+                
 
         for ai in ails:
             if ai.downloadLink:

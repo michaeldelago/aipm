@@ -13,14 +13,14 @@ from bs4 import BeautifulSoup
 class AppImage:
     mainurl = "https://appimage.github.io"
 
-    def __init__(self, id=None):
+    def __init__(self, id=None, githubLink=None):
         if id != None:
             self.url = "".join([self.mainurl, id])
             self.name = id.strip("/").lower()
         else:
             self.url = self.mainurl
             self.name = None
-        self.githubLink = None
+        self.githubLink = githubLink
         self.downloadLink = None
         self.latestVersion = None
         self.installedVersion = None

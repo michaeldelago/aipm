@@ -2,6 +2,7 @@ test*
 env/
 .library*
 lxml
+feed.json
 
 ### Linux ###
 *~

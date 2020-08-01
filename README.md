@@ -20,7 +20,11 @@
 
 - export to `library.json` in the current working dir
 
-`aipm scrape`
+`aipm update` 
+
+- Pulls the library from 
+
+`aipm scrape`[Deprecated]
 
 - generate the library manually
 
@@ -81,13 +85,9 @@ aipm scrape
 
 - There is no rollback (though older versions aren't deleted when new ones are installed)
 
-- The website that the AppImage links are scraped from isn't that great
-  
-  - Only around half of them actually make it to the database properly, as they don't have proper github links on the site
-    
-    - Also, some of the github links are green buttons, and some are white, for some reason
-  
-  - If installation through `aipm` isn't working, it's always worth a google search for the project instead
+- If installation through `aipm` isn't working, it's always worth a google search for the project instead
+
+- AppImages and Flatpaks are better and worse than eachother in their own ways.
 
 ### Known Bugs/ToDo
 
