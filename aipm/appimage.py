@@ -4,6 +4,7 @@ import json
 import os
 import shelve
 import sys
+from math import floor
 
 import lxml
 import requests
@@ -76,6 +77,9 @@ class AppImage:
             # print(f"No githubLink found for {self.name}", file=sys.stderr)
             return 1
 
+        if self.githubLink.endswith("mirrorlist"):
+            return self.suseDownloadLink()
+
         gh_login = gh_creds[0]
         gh_token = gh_creds[1]
 
@@ -99,20 +103,36 @@ class AppImage:
             except IndexError:
                 print(f"Request failed for {self.name}", file=sys.stderr)
                 return 1
-        for datum in data:
-            assets = datum["assets"]
-            for index in range(len(assets)):
-                if assets[index]["browser_download_url"].endswith("AppImage"):
-                    downloadLink = assets[index]["browser_download_url"]
+        try:
+            for datum in data:
+                assets = datum["assets"]
+                for index in range(len(assets)):
+                    if assets[index]["browser_download_url"].endswith("AppImage"):
+                        downloadLink = assets[index]["browser_download_url"]
+                        break
+                if downloadLink:
                     break
-            if downloadLink:
-                break
+        except TypeError:
+            print(
+                f"Error retrieving Download link. GitHub API returned:\n\t{data['message']}",
+                file=sys.stderr,
+            )
+            return 1
         if downloadLink == None:
-            print(f"Unable to find a download link for {self.name}!", file=sys.stderr)
+            print(f"Unable to find a download link for {self.name}", file=sys.stderr)
             return 1
 
         self.downloadLink = downloadLink
         self.latestVersion = downloadLink.split("/")[-2]
+        return 0
+
+    def suseDownloadLink(self):
+        downloadLinkList = self.githubLink.split(".")
+        mlist = downloadLinkList.pop().lower()
+        if mlist != "mirrorlist":
+            return 1
+        else:
+            self.downloadLink = ".".join(downloadLinkList)
         return 0
 
     def populateLinks(self, gh_creds):
@@ -137,14 +157,15 @@ class AppImage:
             else:
                 downloaded = 0
                 filesize = int(filesize)
+                div1k = lambda x: x / 1000
+                filesizeKB = div1k(filesize)
                 print("\n")
                 for data in req.iter_content(chunk_size=4096):
                     downloaded += len(data)
                     fp.write(data)
                     # Ugly way of converting to strings in KB
-                    progstr = "/".join(
-                        [str(int(downloaded / 1000)), str(int(filesize / 1000))]
-                    )
+                    downloaded = div1k(downloaded)
+                    progstr = "/".join(map(str, (map(floor, [downloaded, filesizeKB]))))
                     lenprog = len(progstr)
                     progress = int((75 - lenprog) * downloaded / filesize)
                     print(

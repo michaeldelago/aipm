@@ -155,7 +155,7 @@ class AppImageLibrary:
         ails = list()
 
         if filename:
-            with open(filename,"r") as jsonFile:
+            with open(filename, "r") as jsonFile:
                 data = json.load(jsonFile)
         else:
             req = requests.get(url)
@@ -166,18 +166,19 @@ class AppImageLibrary:
         except KeyError:
             print(f"Invalid content supplied", file=sys.stderr)
             return 1
-        
+
         for package in packages:
             if package["links"]:
                 for link in package["links"]:
                     if link["type"] == "Download":
-                        ai = appimage.AppImage(id=package["name"].lower(), githubLink=link["url"])
+                        ai = appimage.AppImage(
+                            id=package["name"].lower(), githubLink=link["url"]
+                        )
                         ails.append(ai)
-        
+
         with ThreadPoolExecutor() as executor:
             for ai in ails:
                 executor.submit(ai.getDownloadLink, gh_creds)
-                
 
         for ai in ails:
             if ai.downloadLink:
@@ -189,3 +190,7 @@ class AppImageLibrary:
                 )
         print(f"Library has been built.")
         return 0
+
+
+if __name__ == "__main__":
+    pass

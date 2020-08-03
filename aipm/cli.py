@@ -34,6 +34,12 @@ class Program:
 
         return 0
 
+    def update(self, inputfile=None):
+        gh_creds = (self.configuration["gh_login"], self.configuration["gh_token"])
+        ail = appimagelibrary.AppImageLibrary(self.configuration["libraryLocation"])
+        ail.update(gh_creds, filename=inputfile)
+        return 0
+
     def export(self):
         ail = appimagelibrary.AppImageLibrary(self.configuration["libraryLocation"])
         if ail.exportJSON() == 0:
@@ -46,11 +52,20 @@ class Program:
         return 0
 
     def scrape(self):
-        ail = appimagelibrary.AppImageLibrary(self.configuration["libraryLocation"])
+        answer = None
 
-        gh_creds = (self.configuration["gh_login"], self.configuration["gh_token"])
-        ail.scrapeLibrary(gh_creds)
-        return 0
+        answer = input(
+            'This feature is deprecated. You\'re going to have a better experience with the "update" command. Continue? [y/N]\n'
+        )
+
+        if answer.lower() == "y":
+            ail = appimagelibrary.AppImageLibrary(self.configuration["libraryLocation"])
+
+            gh_creds = (self.configuration["gh_login"], self.configuration["gh_token"])
+            ail.scrapeLibrary(gh_creds)
+            return 0
+        else:
+            return 0
 
     def importJson(self, inputFile):
         ail = appimagelibrary.AppImageLibrary(self.configuration["libraryLocation"])
@@ -73,14 +88,26 @@ def main():
     parse_import = subparsers.add_parser("import", help="Import a JSON library")
     parse_import.add_argument("-f", "--file", help="JSON file", required=True)
 
+    parse_update = subparsers.add_parser(
+        "update", help="Update package database from repository"
+    )
+    parse_update.add_argument(
+        "-f", "--file", help="feed.json containing release info", required=False
+    )
+
     parse_export = subparsers.add_parser("export", help="Export to a JSON file")
 
-    parse_scrape = subparsers.add_parser("scrape", help="Scrape library from internet")
+    parse_scrape = subparsers.add_parser(
+        "scrape", help="Scrape library from internet (deprecated)"
+    )
+
+    parse_upgrade = subparsers.add_parser(
+        "upgrade", help="Download newest versions of installed packages"
+    )
 
     args = parser.parse_args(sys.argv[1:])
 
     prog = Program()
-
 
     if args.option == "search":
         prog.search(args.search_term)
@@ -92,11 +119,12 @@ def main():
         prog.importJson(args.file)
     elif args.option == "export":
         prog.export()
-    elif args.action == "upgrade":
+    elif args.option == "update":
+        prog.update()
+    elif args.option == "upgrade":
         print("Not implemented yet :e")
     # except AttributeError:
     #     args = parser.parse_args(["--help"])
-
 
 
 if __name__ == "__main__":
