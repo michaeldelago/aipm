@@ -55,7 +55,7 @@ aipm import -f /path/to/repo/library.json
 
 OR
 
-aipm scrape
+aipm update
 ```
 
 ### Notes

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import shelve
 import sys
@@ -7,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 import lxml
 import requests
 from bs4 import BeautifulSoup
+import itertools
 
 try:
     from aipm import appimage
@@ -20,22 +22,18 @@ class AppImageLibrary:
 
     def addItem(self, appimage):
         if not os.path.isfile(self.location):
-            print(
-                f"Appimage library doesn't exist at location {self.location}!",
-                file=sys.stderr,
+            logging.error(
+                f"Appimage library doesn't exist at location {self.location}!"
             )
             return 1
         with shelve.open(self.location) as library:
             library[appimage.name] = appimage
-        print(f"Added Item to Library: {appimage.name}")
-        return 0
+        logging.info(f"Added Item to Library: {appimage.name}")
+        return appimage.name
 
     def delItem(self, appimageName):
         if not os.path.isfile(self.location):
-            print(
-                f"Appimage library doesn't exist at location {self.location}!",
-                file=sys.stderr,
-            )
+            logging.info(f"Appimage library doesn't exist at location {self.location}!")
             return 1
         with shelve.open(self.location) as library:
             library[appimageName] = None
@@ -56,11 +54,11 @@ class AppImageLibrary:
                         altlist.append(packname)
                 if len(altlist) > 0:
                     altlist = '" "'.join(altlist)
-                    print(
+                    logging.error(
                         f"Package {searchTerm} not found. Did you mean one of these?\n\t{altlist}"
                     )
                 else:
-                    print(f"Package {searchTerm} not found.")
+                    logging.error(f"Package {searchTerm} not found.")
                 return appimage
         return appimage
 
@@ -80,7 +78,7 @@ class AppImageLibrary:
             for item in searchResults:
                 print(f"\t{item[0].ljust(longestname + 2)} {item[1]}")
         else:
-            print(f"No results found for term {searchTerm}")
+            logging.error(f"No results found for term {searchTerm}")
         return 0
 
     def exportJSON(self):
@@ -142,9 +140,8 @@ class AppImageLibrary:
             if ai.downloadLink:
                 self.addItem(ai)
             else:
-                print(
-                    f"No Download Link for {ai.name}. Not Adding to Library Database.",
-                    file=sys.stderr,
+                logging.error(
+                    f"No Download Link for {ai.name}. Not Adding to Library Database."
                 )
         print(f"Library has been built.")
         return 0
@@ -164,7 +161,7 @@ class AppImageLibrary:
         try:
             packages = data["items"]
         except KeyError:
-            print(f"Invalid content supplied", file=sys.stderr)
+            logging.error(f"Invalid content supplied")
             return 1
 
         for package in packages:
@@ -176,18 +173,18 @@ class AppImageLibrary:
                         )
                         ails.append(ai)
 
-        with ThreadPoolExecutor() as executor:
-            for ai in ails:
-                executor.submit(ai.getDownloadLink, gh_creds)
+        print("Building download links for AppImages...")
 
-        for ai in ails:
-            if ai.downloadLink:
-                self.addItem(ai)
-            else:
-                print(
-                    f"No Download Link for {ai.name}. Not Adding to Library Database.",
-                    file=sys.stderr,
-                )
+        with ThreadPoolExecutor() as executor:
+            executor.map(lambda obj: obj.getDownloadLink(gh_creds), ails)
+        print("Done")
+
+        # generator of AppImages that properly pulled the download link
+        properList = filter(lambda x: x.downloadLink != None, ails)
+
+        # creates a tuple (to fulfill the map) and adds the items to the library
+        completelist = tuple(map(self.addItem, properList))
+
         print(f"Library has been built.")
         return 0
 

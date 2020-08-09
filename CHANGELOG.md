@@ -1,5 +1,19 @@
 # Changelog
 
+### 0.6
+
+- Logging revisited (though a work in progress)
+
+- Ratelimit checks for GitHub API calls
+
+- Small bug in Download progress showing 4 instead of the growing downloaded amount
+
+- Refactored appimagelibrary.update to be more "functional" (use that loosely)
+  
+  - Uses map/filter instead of loops
+
+- 
+
 ### 0.5
 
 - Uses proper feed.json (Issue #1)

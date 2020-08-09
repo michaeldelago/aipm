@@ -2,6 +2,7 @@
 
 import os
 import pprint
+import logging
 
 import yaml
 
@@ -27,7 +28,9 @@ def getconfig():
                 with open(location, "r") as configFile:
                     config = yaml.load(configFile, Loader=Loader)
                 break
-        print(f"Configuration loaded from {location} ")
     except:
-        print("No valid config files found!")
+        logging.critical("No valid config files found!")
+        return None
+    logging.info(f"Configuration loaded from {location}")
+
     return config

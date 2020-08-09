@@ -5,6 +5,7 @@ import argparse
 import os
 import pprint
 import sys
+import logging
 
 from aipm import config
 from aipm import appimagelibrary
@@ -25,7 +26,7 @@ class Program:
             downloadsDir = f"/home/{config.username}/bin"
 
         if os.path.isdir(downloadsDir) == False:
-            print(f"Downloads directory {downloadsDir} does not exist", file=sys.stderr)
+            logging.critical(f"Downloads directory {downloadsDir} does not exist")
             return 1
         elif os.path.isdir("/".join([downloadsDir, ".apps"])) == False:
             os.makedirs("/".join([downloadsDir, ".apps"]))
@@ -55,7 +56,7 @@ class Program:
         answer = None
 
         answer = input(
-            'This feature is deprecated. You\'re going to have a better experience with the "update" command. Continue? [y/N]\n'
+            'This feature is deprecated, and is not maintained. You\'re going to have a better experience with the "update" command. Continue? [y/N]\n'
         )
 
         if answer.lower() == "y":
@@ -122,7 +123,7 @@ def main():
     elif args.option == "update":
         prog.update()
     elif args.option == "upgrade":
-        print("Not implemented yet :e")
+        logging.critical("Not implemented yet :e")
     # except AttributeError:
     #     args = parser.parse_args(["--help"])
 

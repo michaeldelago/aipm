@@ -4,6 +4,7 @@ import json
 import os
 import shelve
 import sys
+import logging
 from math import floor
 
 import lxml
@@ -35,7 +36,7 @@ class AppImage:
                 if hasattr(self, key):
                     setattr(self, key, inputDict[key])
             except KeyError:
-                print(f"Key {key} missing from input dictionary", file=sys.stderr)
+                logging.warning(f"Key {key} missing from input dictionary")
         return self
 
     def asdict(self):
@@ -66,7 +67,7 @@ class AppImage:
                         githubLink = link
                         break
         if githubLink == None:
-            print(f"No github link found for {self.name}", file=sys.stderr)
+            logging.error(f"No github link found for {self.name}")
             return 1
         self.githubLink = githubLink
         return 0
@@ -74,34 +75,37 @@ class AppImage:
     def getDownloadLink(self, gh_creds):
         downloadLink = None
         if self.githubLink == None:
-            # print(f"No githubLink found for {self.name}", file=sys.stderr)
             return 1
 
         if self.githubLink.endswith("mirrorlist"):
             return self.suseDownloadLink()
-
-        gh_login = gh_creds[0]
-        gh_token = gh_creds[1]
 
         ls = self.githubLink.split("/")
         ls[2] = "api.github.com"
         ls.insert(3, "repos")
         apiLink = "/".join(ls)
 
+        reqcheckurl = "https://api.github.com/rate_limit"
+
         with requests.Session() as gh_session:
-            gh_session.auth = (gh_login, gh_token)
+            gh_session.auth = gh_creds
+            rate_limit = json.loads(gh_session.get(reqcheckurl).content)
+            if rate_limit["rate"]["remaining"] < 1500:
+                logging.error(f"Not enough requests left!")
+                return 1
+            
+            logging.info(f"Requests Left: {rate_limit['rate']['remaining']}" )
+
             try:
                 req = gh_session.get(apiLink)
                 data = json.loads(req.text)
-                # assets = data[0]["assets"]
             except KeyError:
-                print(
-                    f"Unable to properly download the packages downloads for {self.name}",
-                    file=sys.stderr,
+                logging.info(
+                    f"Unable to properly get the packages downloads for {self.name}"
                 )
                 return 1
             except IndexError:
-                print(f"Request failed for {self.name}", file=sys.stderr)
+                logging.error(f"Request failed for {self.name}")
                 return 1
         try:
             for datum in data:
@@ -113,17 +117,16 @@ class AppImage:
                 if downloadLink:
                     break
         except TypeError:
-            print(
-                f"Error retrieving Download link. GitHub API returned:\n\t{data['message']}",
-                file=sys.stderr,
+            logging.error(
+                f"Error retrieving download link for {self.name}. GitHub API returned:\n\t{data['message']}",
             )
             return 1
-        if downloadLink == None:
-            print(f"Unable to find a download link for {self.name}", file=sys.stderr)
-            return 1
 
+        # program does nothing if no download link is found
         self.downloadLink = downloadLink
-        self.latestVersion = downloadLink.split("/")[-2]
+        if self.downloadLink != None:
+            self.latestVersion = downloadLink.split("/")[-2]
+
         return 0
 
     def suseDownloadLink(self):
@@ -140,7 +143,7 @@ class AppImage:
 
     def downloadAppImage(self, downloadsDir):
         if self.downloadLink == None:
-            print(f"No downloadLink found for {self.name}", file=sys.stderr)
+            logging.error(f"No Download Link found for {self.name}")
             return 1
 
         filename = self.downloadLink.split("/")[-1]
@@ -152,22 +155,20 @@ class AppImage:
             req = requests.get(self.downloadLink, stream=True)
             filesize = req.headers.get("content-length")
             if filesize == None:
-                print(f"Unable to generate progress bar", file=sys.stderr)
+                logging.warning(f"Unable to generate progress bar")
                 fp.write(req.content)
             else:
                 downloaded = 0
                 filesize = int(filesize)
-                div1k = lambda x: x / 1000
-                filesizeKB = div1k(filesize)
+                div1k = lambda x: x / 1000 # lambda to divide by 1000
+                filesizeKB = div1k(filesize) # represent downloads in KB
                 print("\n")
                 for data in req.iter_content(chunk_size=4096):
-                    downloaded += len(data)
+                    downloaded += div1k(len(data)) 
                     fp.write(data)
-                    # Ugly way of converting to strings in KB
-                    downloaded = div1k(downloaded)
-                    progstr = "/".join(map(str, (map(floor, [downloaded, filesizeKB]))))
+                    progstr = "/".join([str(floor(downloaded)), str(floor(filesizeKB))])
                     lenprog = len(progstr)
-                    progress = int((75 - lenprog) * downloaded / filesize)
+                    progress = int((75 - lenprog) * downloaded / filesizeKB)
                     print(
                         f"> {progstr} [{'=' * progress}>{' ' * ((75 - lenprog) - progress)}]",
                         end="\r",
