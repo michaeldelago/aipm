@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.6.5
+
+- Fixed bug that caused AppImages with "Install" links instead of "Download" links to fail on pulling data, such as [Joplin](https://appimage.github.io/Joplin/)
+
 ### 0.6
 
 - Logging revisited (though a work in progress)

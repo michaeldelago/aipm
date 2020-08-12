@@ -10,22 +10,18 @@ import requests
 from bs4 import BeautifulSoup
 import itertools
 
-try:
-    from aipm import appimage
-except:
-    import appimage
-
+from .appimage import AppImage
 
 class AppImageLibrary:
     def __init__(self, location):
         self.location = "/".join([os.path.abspath(location), ".library"])
 
     def addItem(self, appimage):
-        if not os.path.isfile(self.location):
-            logging.error(
-                f"Appimage library doesn't exist at location {self.location}!"
-            )
-            return 1
+        # if not os.path.isfile(self.location):
+        #     logging.error(
+        #         f"Appimage library doesn't exist at location {self.location}!"
+        #     )
+        #     return 1
         with shelve.open(self.location) as library:
             library[appimage.name] = appimage
         logging.info(f"Added Item to Library: {appimage.name}")
@@ -41,13 +37,13 @@ class AppImageLibrary:
         return 0
 
     def select(self, searchTerm):
-        appimage = None
+        ai = AppImage()
         altlist = list()
         searchTerm = searchTerm.lower()  # Force lowercase to make life worth living
         with shelve.open(self.location) as library:
             try:
-                appimage = library[searchTerm]
-                appimage.name = searchTerm
+                ai = library[searchTerm]
+                ai.name = searchTerm
             except KeyError:
                 for packname in library.keys():
                     if packname.startswith(searchTerm[:3]):
@@ -59,8 +55,8 @@ class AppImageLibrary:
                     )
                 else:
                     logging.error(f"Package {searchTerm} not found.")
-                return appimage
-        return appimage
+                return ai
+        return ai
 
     def search(self, searchTerm):
         searchResults = [("Software Name", "Latest Version"), ("", "")]
@@ -78,7 +74,7 @@ class AppImageLibrary:
             for item in searchResults:
                 print(f"\t{item[0].ljust(longestname + 2)} {item[1]}")
         else:
-            logging.error(f"No results found for term {searchTerm}")
+            print(f"No results found for term {searchTerm}")
         return 0
 
     def exportJSON(self):
@@ -96,7 +92,7 @@ class AppImageLibrary:
             librarydict = json.load(fp)
         with shelve.open(self.location) as library:
             for appimageName in librarydict.keys():
-                ai = appimage.AppImage().fromDict(librarydict[appimageName])
+                ai = AppImage().fromDict(librarydict[appimageName])
                 library[appimageName] = ai
         return 0
 
@@ -132,7 +128,7 @@ class AppImageLibrary:
         # Do this with threads because speed
         with ThreadPoolExecutor() as executor:
             for scrapedai in appimages:
-                ai = appimage.AppImage(scrapedai.get("id"))
+                ai = AppImage(scrapedai.get("id"))
                 executor.submit(ai.populateLinks, gh_creds)
                 ails.append(ai)
 
@@ -167,8 +163,8 @@ class AppImageLibrary:
         for package in packages:
             if package["links"]:
                 for link in package["links"]:
-                    if link["type"] == "Download":
-                        ai = appimage.AppImage(
+                    if link["type"] == "Download" or link["type"] == "Install":
+                        ai = AppImage(
                             id=package["name"].lower(), githubLink=link["url"]
                         )
                         ails.append(ai)
