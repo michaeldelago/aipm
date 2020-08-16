@@ -7,24 +7,31 @@
 `aipm install appimage`
 
 - install a package
-  `aipm uninstall appimage`
+
+`aipm uninstall appimage`
 - uninstalls all versions of package
-  `aipm clean [appimage|all]`
+
+`aipm clean [appimage|all]`
 - remove older versions of AppImages
 
 `aipm search search_term`
 
 - search for a package
-  `aipm import -f library.json`
+
+`aipm import -f library.json`
 
 - import a JSON in library format
-  `aipm export`
+
+`aipm export`
 
 - export to `library.json` in the current working dir
-  `aipm update`
 
-- Pulls the library from
-  `aipm scrape`[Deprecated]
+`aipm update`
+
+- Pulls the library from JSON feed
+- requires `gh_login` and `gh_token` to be set in configuration
+
+`aipm scrape`[Deprecated]
 
 - generate the library manually
 
