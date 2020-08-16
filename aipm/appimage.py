@@ -5,7 +5,10 @@ import os
 import shelve
 import sys
 import logging
+import re
 from math import floor
+
+# from functools import partial
 
 import lxml
 import requests
@@ -25,7 +28,7 @@ class AppImage:
         self.githubLink = githubLink
         self.downloadLink = None
         self.latestVersion = None
-        self.installedVersion = None
+        self.installedVersion = list()
 
     def __repr__(self):
         return str(self.asdict())
@@ -93,8 +96,8 @@ class AppImage:
             if rate_limit["rate"]["remaining"] < 1500:
                 logging.error(f"Not enough requests left!")
                 return 1
-            
-            logging.info(f"Requests Left: {rate_limit['rate']['remaining']}" )
+
+            logging.info(f"Requests Left: {rate_limit['rate']['remaining']}")
 
             try:
                 req = gh_session.get(apiLink)
@@ -135,6 +138,8 @@ class AppImage:
         if mlist != "mirrorlist":
             return 1
         else:
+            # None of the links with OpenSuse's repositories haven an easily scrapable version
+            self.latestVersion = "continuous" 
             self.downloadLink = ".".join(downloadLinkList)
         return 0
 
@@ -160,11 +165,11 @@ class AppImage:
             else:
                 downloaded = 0
                 filesize = int(filesize)
-                div1k = lambda x: x / 1000 # lambda to divide by 1000
-                filesizeKB = div1k(filesize) # represent downloads in KB
+                div1k = lambda x: x / 1000  # lambda to divide by 1000
+                filesizeKB = div1k(filesize)  # represent downloads in KB
                 print("\n")
                 for data in req.iter_content(chunk_size=4096):
-                    downloaded += div1k(len(data)) 
+                    downloaded += div1k(len(data))
                     fp.write(data)
                     progstr = "/".join([str(floor(downloaded)), str(floor(filesizeKB))])
                     lenprog = len(progstr)
@@ -175,7 +180,15 @@ class AppImage:
                     )
                 print("\n")
 
-        self.installedVersion = self.latestVersion
+        # List of installed versions, append newest version as necessary
+        if self.installedVersion == None:
+            self.installedVersion = list()
+
+        if (
+            len(self.installedVersion) == 0
+            or self.installedVersion[0] != self.latestVersion
+        ):
+            self.installedVersion.insert(0, self.latestVersion)
 
         # setup perms and shortcuts
         os.chmod(abspath, 0o755)
@@ -184,6 +197,55 @@ class AppImage:
         os.symlink(abspath, linkname)
 
         print(f"{self.name} downloaded to {abspath}, linked as {linkname}")
+        return 0
+
+    def uninstall(self, binDir):
+        binaryName = None
+        binary = None
+        linkPath = "/".join([binDir, self.name])
+        try:
+            binary = os.readlink(linkPath).split("/")[-1]
+            binaryName = binary.split("-")[0]
+        except:
+            logging.error(f"getting link failed for {self.name}")
+            return 1
+
+        filenameRegEx = re.compile(rf"{binaryName}-.*.AppImage")
+        filesDir = "/".join([binDir, ".apps"])
+
+        files = filter(filenameRegEx.match, os.listdir(filesDir))
+
+        for filename in files:
+            os.remove("/".join([filesDir, filename]))
+            logging.info(f"Removed: {filename}")
+        os.unlink(linkPath)
+        print(f"{self.name} has been uninstalled.")
+
+        return 0
+
+    def clean(self, binDir):
+        binaryName = None
+        binary = None
+        linkPath = "/".join([binDir, self.name])
+        try:
+            binary = os.readlink(linkPath).split("/")[-1]
+            binaryName = binary.split("-")[0]
+        except:
+            logging.error(f"getting link failed for {self.name}")
+            return 1
+
+        filenameRegEx = re.compile(rf"{binaryName}-.*.AppImage")
+        filesDir = "/".join([binDir, ".apps"])
+
+        files = filter(filenameRegEx.match, os.listdir(filesDir))
+        oldfiles = filter(lambda x: x != binary, files)
+
+        for filename in oldfiles:
+            os.remove("/".join([filesDir, filename]))
+            logging.info(f" Removed old file: {filename}")
+            if len(self.installedVersion) > 1:
+                self.installedVersion.pop()
+
         return 0
 
 

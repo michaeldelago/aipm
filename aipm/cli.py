@@ -33,6 +33,8 @@ class Program:
 
         ai.downloadAppImage(downloadsDir)
 
+        ail.addItem(ai)
+
         return 0
 
     def update(self, inputfile=None):
@@ -73,6 +75,18 @@ class Program:
         ail.importJSON(inputFile)
         return 0
 
+    def clean(self, ainame):
+        ail = appimagelibrary.AppImageLibrary(self.configuration["libraryLocation"])
+        ail.clean(self.configuration["AppImageLocation"], ainame)
+        return 0
+
+
+    def uninstall(self, ainame):
+        ail = appimagelibrary.AppImageLibrary(self.configuration["libraryLocation"])
+        ai = ail.select(ainame)
+        ai.uninstall(self.configuration["AppImageLocation"])
+        ail.addItem(ai)
+        return 0
 
 def main():
     parser = argparse.ArgumentParser(
@@ -89,11 +103,17 @@ def main():
     parse_import = subparsers.add_parser("import", help="Import a JSON library")
     parse_import.add_argument("-f", "--file", help="JSON file", required=True)
 
+    parse_import = subparsers.add_parser("clean", help="Remove old AppImages")
+    parse_import.add_argument("appimage", help="Package name", default="all")
+
+    parse_import = subparsers.add_parser("uninstall", help="Remove an AppImages")
+    parse_import.add_argument("appimage", help="Package name")
+
     parse_update = subparsers.add_parser(
         "update", help="Update package database from repository"
     )
     parse_update.add_argument(
-        "-f", "--file", help="feed.json containing release info", required=False
+        "-f", "--file", help="feed.json containing release info", default=None, required=False
     )
 
     parse_export = subparsers.add_parser("export", help="Export to a JSON file")
@@ -121,7 +141,11 @@ def main():
     elif args.option == "export":
         prog.export()
     elif args.option == "update":
-        prog.update()
+        prog.update(inputfile=args.file)
+    elif args.option == "clean":
+        prog.clean(args.appimage)
+    elif args.option == "uninstall":
+        prog.uninstall(args.appimage)
     elif args.option == "upgrade":
         logging.critical("Not implemented yet :e")
     # except AttributeError:

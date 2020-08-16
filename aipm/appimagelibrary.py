@@ -1,3 +1,4 @@
+import itertools
 import json
 import logging
 import os
@@ -8,9 +9,10 @@ from concurrent.futures import ThreadPoolExecutor
 import lxml
 import requests
 from bs4 import BeautifulSoup
-import itertools
 
 from .appimage import AppImage
+import functools
+
 
 class AppImageLibrary:
     def __init__(self, location):
@@ -49,13 +51,13 @@ class AppImageLibrary:
                     if packname.startswith(searchTerm[:3]):
                         altlist.append(packname)
                 if len(altlist) > 0:
-                    altlist = '" "'.join(altlist)
+                    altlist = ' '.join(altlist)
                     logging.error(
                         f"Package {searchTerm} not found. Did you mean one of these?\n\t{altlist}"
                     )
                 else:
                     logging.error(f"Package {searchTerm} not found.")
-                return ai
+                return None
         return ai
 
     def search(self, searchTerm):
@@ -173,15 +175,33 @@ class AppImageLibrary:
 
         with ThreadPoolExecutor() as executor:
             executor.map(lambda obj: obj.getDownloadLink(gh_creds), ails)
-        print("Done")
 
         # generator of AppImages that properly pulled the download link
         properList = filter(lambda x: x.downloadLink != None, ails)
+        logging.info("Download Links Added to AppImages")
 
         # creates a tuple (to fulfill the map) and adds the items to the library
         completelist = tuple(map(self.addItem, properList))
 
         print(f"Library has been built.")
+        return 0
+    
+    def clean(self, binLoc, ainame):
+        installedai = []
+        if ainame == "all":
+            def cleanWlocation(ai):
+                ai.clean(binLoc)
+            with shelve.open(self.location) as library:
+                for name in library.keys():
+                    ai = library[name]
+                    if len(ai.installedVersion) >= 1:
+                        installedai.append(ai)
+            tuple(map(cleanWlocation, installedai))
+            tuple(map(self.addItem, installedai))
+        else:
+            ai = self.select(ainame)
+            ai.clean(binLoc)
+            self.addItem(ai)
         return 0
 
 
