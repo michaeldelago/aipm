@@ -1,6 +1,6 @@
 # AIPM - A Package Manager for AppImages
 
-###### Scrapes [appimage.github.io/apps](appimage.github.io/apps), and creates a small download manager for these
+###### Scrapes [appimage.github.io/apps](https://appimage.github.io/apps), and creates a small download manager for these
 
 ### Usage
 
