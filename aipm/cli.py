@@ -4,6 +4,7 @@
 import argparse
 import os
 import pprint
+from re import sub
 from sqlite3.dbapi2 import connect
 import sys
 import logging
@@ -91,12 +92,13 @@ class Program:
 
     def init(self):
         print("creating database")
-        os.mkdir("~/.local/share/aipm")
-        connection = sqlite3.connect("~/.local/share/aipm/apps.db")
+        homedir = os.path.expanduser("~")
+        os.mkdir(f"{homedir}/.local/share/aipm")
+        connection = sqlite3.connect(f"{homedir}/.local/share/aipm/apps.db")
         gen_tables = """CREATE TABLE IF NOT EXISTS projects (
                                         Appname text PRIMARY KEY,
-                                        Version integer NOT NULL"""
-        cursor = connection.cursor
+                                        Version integer NOT NULL);"""
+        cursor = connection.cursor()
         cursor.execute(gen_tables)
         connection.close()
 
@@ -105,8 +107,8 @@ def main():
     parser = argparse.ArgumentParser(
         prog="aipm", description="Package Manager for AppImages"
     )
+    parser.add_argument("init", help="creates the sqlite db")
     subparsers = parser.add_subparsers(dest="option")
-
     parse_install = subparsers.add_parser("install", help="Install a package")
     parse_install.add_argument("appimage", help="Package Name")
 
@@ -165,7 +167,7 @@ def main():
         prog.uninstall(args.appimage)
     elif args.option == "upgrade":
         logging.critical("Not implemented yet :e")
-    elif args.option == "init":
+    elif args.init:
         prog.init()
     # except AttributeError:
     #     args = parser.parse_args(["--help"])
