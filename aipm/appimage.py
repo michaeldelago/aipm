@@ -139,7 +139,7 @@ class AppImage:
             return 1
         else:
             # None of the links with OpenSuse's repositories haven an easily scrapable version
-            self.latestVersion = "continuous" 
+            self.latestVersion = "continuous"
             self.downloadLink = ".".join(downloadLinkList)
         return 0
 

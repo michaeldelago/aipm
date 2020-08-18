@@ -4,8 +4,10 @@
 import argparse
 import os
 import pprint
+from sqlite3.dbapi2 import connect
 import sys
 import logging
+import sqlite3
 
 from aipm import config
 from aipm import appimagelibrary
@@ -80,13 +82,24 @@ class Program:
         ail.clean(self.configuration["AppImageLocation"], ainame)
         return 0
 
-
     def uninstall(self, ainame):
         ail = appimagelibrary.AppImageLibrary(self.configuration["libraryLocation"])
         ai = ail.select(ainame)
         ai.uninstall(self.configuration["AppImageLocation"])
         ail.addItem(ai)
         return 0
+
+    def init(self):
+        print("creating database")
+        os.mkdir("~/.local/share/aipm")
+        connection = sqlite3.connect("~/.local/share/aipm/apps.db")
+        gen_tables = """CREATE TABLE IF NOT EXISTS projects (
+                                        Appname text PRIMARY KEY,
+                                        Version integer NOT NULL"""
+        cursor = connection.cursor
+        cursor.execute(gen_tables)
+        connection.close()
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -113,7 +126,11 @@ def main():
         "update", help="Update package database from repository"
     )
     parse_update.add_argument(
-        "-f", "--file", help="feed.json containing release info", default=None, required=False
+        "-f",
+        "--file",
+        help="feed.json containing release info",
+        default=None,
+        required=False,
     )
 
     parse_export = subparsers.add_parser("export", help="Export to a JSON file")
@@ -148,6 +165,8 @@ def main():
         prog.uninstall(args.appimage)
     elif args.option == "upgrade":
         logging.critical("Not implemented yet :e")
+    elif args.option == "init":
+        prog.init()
     # except AttributeError:
     #     args = parser.parse_args(["--help"])
 
