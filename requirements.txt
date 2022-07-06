@@ -10,7 +10,7 @@ click==7.1.2
 idna==2.10
 isort==4.3.21
 lazy-object-proxy==1.4.3
-lxml==4.5.2
+lxml==4.9.1
 mccabe==0.6.1
 pathspec==0.8.0
 pylint==2.5.3
