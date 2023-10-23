@@ -164,3 +164,7 @@ dmypy.json
 ### VisualStudioCode Patch ###
 # Ignore all local history of files
 .history
+
+.idea/aipm.iml
+.idea/misc.xml
+.idea/modules.xml
